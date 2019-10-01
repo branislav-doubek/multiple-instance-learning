@@ -26,7 +26,7 @@ For starting the application run:
 ```
 python3 main.py <mode> <kernel> <dataset> <cardinality potential> <parameter=value>
 ```
-###Keywords:
+### Keywords:
 mode:
 ```
 train - trains classifier on train dataset and saves it into _models file
@@ -71,7 +71,7 @@ and with parameters:
 -dl = disable logger [bool]
 -lr = learning rate [float]
 ```
-### Example
+## Example
 If we want to cross validate rho parameter using batch gradient descent with rmimn cardinality potential on fox dataset:
 ```
 python3 main.py cv bgd fox rmimn -cv='rho'
