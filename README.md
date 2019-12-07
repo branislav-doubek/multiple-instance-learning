@@ -40,7 +40,6 @@ kernel:
 bgd = batch gradient descent
 inf-svm = inference based SVM
 lp = linear programming
-qp = quadratic programming
 ```
 dataset:
 ```
@@ -61,15 +60,19 @@ gmimn =  generalized multiple instance markov network
 ```
 and with parameters:
 ```
--rho = used in rmimn potential as a constraint [float]
+-ro = used in rmimn potential as a constraint [float]
 -c = sets parameter C [float]
 -iterations = sets maximum number of permitted iterations [int]
 -k = used in gmimn potential as a constraint [int]
--rd = random seed [int]
+-rs = random seed [int]
 -v = visualize [bool]
 -cv = cross-validate on hyperparameter ['rho'(ONLY RMIMN), 'c', 'lr', 'k'(only GMIMN)]
--dl = disable logger [bool]
 -lr = learning rate [float]
+-cardinality_lr = cardinality learning rate [float]
+-cm = confusion matrx [bool]
+-s = split ratio for training/testing[float]
+-norm = regularization norm ['l1', 'l2'] (Only for bgd)
+-lpm = linear programming methods ['interior-point', 'revised simplex', 'simplex'] (Only for lp)
 ```
 ## Example
 If we want to cross validate rho parameter using batch gradient descent with rmimn cardinality potential on fox dataset:
@@ -80,4 +83,4 @@ python3 main.py cv bgd fox rmimn -cv='rho'
 
 ## Authors
 
-* **Branislav Doubek** -  - [Github](https://github.com/Frovis)
+* **Branislav Doubek** -  - [Github](https://github.com/branislav-doubek)
