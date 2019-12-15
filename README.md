@@ -2,7 +2,6 @@
 
 Multiple instance learning framework which uses cardinality potential for infering bag labels.
 
-## Getting Started
 ## Prerequisites
 Install required packages:
 ```
@@ -31,8 +30,8 @@ python3 main.py <mode> <kernel> <dataset> <cardinality potential> <parameter=val
 mode:
 ```
 train - trains classifier on train dataset and saves it into _models file
-test - tests classifier on test dataset
-run - trains classifier and evaluates accuracy and f1 score on testing dataset
+test - tests trained classifier on test dataset
+run - trains classifier and evaluates its accuracy testing dataset
 cv - uses k-fold cross validation on training dataset to estimate hyperparemeters of our classifier and evaluates accuracy on testing dataset
 ```
 
