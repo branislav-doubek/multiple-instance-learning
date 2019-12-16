@@ -10,6 +10,7 @@ git clone https://github.com/Frovis/MultipleInstanceLearning.git
 Download datasets for multiple instance learning at:
 * matlab files: [Fox, Elephant, Tiger, Musk1, Musk2](http://www.cs.columbia.edu/~andrews/mil/datasets.html)
 and extract them into data folder of our project.
+## Libraries
 to install libraries run:
 ```
 pip3 install -r requirements.txt 
