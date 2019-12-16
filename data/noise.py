@@ -62,7 +62,6 @@ class Dataset():
                 negative_bags.append(df.to_numpy())
                 negative_ilabels.append(df_instance_labels)
         balanced_dataset = min(len(positive_bags), len(negative_bags), 100)
-        print(balanced_dataset)
         self.features.extend(positive_bags[:balanced_dataset])
         self.bag_labels.extend([1 for _ in positive_bags[:balanced_dataset]])
         self.instance_labels.extend(positive_ilabels[:balanced_dataset])
