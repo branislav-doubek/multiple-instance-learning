@@ -2,58 +2,57 @@ import warnings
 import importlib
 import argparse
 import logging
-from _methods.utilities import batch_set, calculate_metrics
-from sklearn.model_selection import train_test_split
+from _methods.utilities import *
+
 from mil import MIL
 import pickle
 import os
 from collections.abc import Iterable
 
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
-console.setFormatter(logging.Formatter('[%(asctime)s %(levelname)-3s @%(name)s] %(message)s', datefmt='%H:%M:%S'))
-logging.basicConfig(level=logging.DEBUG, handlers=[console])
-logging.getLogger("mil").setLevel(logging.DEBUG)
-logger = logging.getLogger("main")
 
-
-def model_path(args, split='train'):
-    return '/_models/model_{}_{}_{}_{}.pkl'.format(split, args.dataset,
-                                                args.cardinality_potential,
-                                                args.rd)
-
-def train_model(args, features, bag_labels):
-    x_train, x_val, y_train, y_val = batch_set(features, bag_labels)
+def train(args, dataset):
+    x_train, y_train = dataset.return_training_set()
     model = MIL(args)
     model.fit(x_train, y_train)
     filepath = os.getcwd() + model_path(args)
+    if args.v:
+        loss = model.return_loss_history()
+        visualize_loss(args, loss)
     file = open(filepath, 'wb')
     pickle.dump(model, file)
 
-
-def test_model(args, features, bag_labels):
-    x_train, x_test, y_train, y_test = batch_set(features, bag_labels)
+def test(args, dataset):
+    x_test, y_test = dataset.return_testing_set()
     filepath = os.getcwd() + model_path(args)
     try:
         with open(filepath, 'rb') as model_file:
             model = pickle.load(model_file)
-            y_pred = model.predict(x_test)
-            rec, prec, acc, f1 = calculate_metrics(y_pred, y_val)
+            y_pred, y_instance_pred = model.predict(x_test)
+            rec, prec, acc, f1 = calculate_metrics(y_pred, y_test, args.cm)
+            print(acc)
             if args.v:
-                visualize_inference(model, y_test, x_test)
+                visualize_inference(args, dataset, y_pred, y_instance_pred)
     except FileNotFoundError as e:
         logger.exception(e)
         logger.error('No module named: {}'.format(filepath))
 
-def run(args, features, bag_labels):
-    x_train, x_test, y_train, y_test = train_test_split(features, bag_labels, shuffle=False, test_size=0.2)
-    model = MIL(args)
-    model.fit(x_train, y_train)
-    y_pred = model.predict(x_test)
-    rec, prec, acc, f1 = calculate_metrics(y_pred, y_test)
-    1e-8
-    
-    
+def run(args, dataset):
+    accuracies = []
+    for run in range(5):
+        dataset.random_shuffle()
+        x_train, y_train = dataset.return_training_set()
+        x_test, y_test = dataset.return_testing_set()
+        model = MIL(args)
+        model.fit(x_train, y_train)
+        y_pred, y_instance_pred = model.predict(x_test)
+        rec, prec, acc, f1 = calculate_metrics(y_pred, y_test, args.cm)
+        accuracies.append(acc)
+        print('Acc={}'.format(acc))
+        args.rs = args.rs+1
+    mean = average(accuracies)
+    std_dev = standard_deviaton(accuracies, mean)
+    print('Result of evaluation: mean = {}, std={}'.format(mean, std_dev))
+
 def k_validation(args, features, bag_labels, k_valid=5):
     """
     Uses k_cross_validation to evaluate model
@@ -62,7 +61,7 @@ def k_validation(args, features, bag_labels, k_valid=5):
     :param bag_labels: list of bag labels [list]
     :return:
     """
-    total_f1 = 0
+    accuracies = []
     for cur_iteration in range(k_valid):
         x_train, x_val, y_train, y_val = batch_set(features, bag_labels, cur_iteration, k_valid)
         model = MIL(args)
@@ -70,50 +69,122 @@ def k_validation(args, features, bag_labels, k_valid=5):
         filepath = os.getcwd() + model_path(args, cur_iteration)
         file = open(filepath, 'wb')
         pickle.dump(model, file)
-        y_pred = model.predict(x_val)
-        rec, prec, acc, f1 = calculate_metrics(y_pred, y_val)
-        total_f1 += f1
-    total_f1 /= k_valid
-    return total_f1
-        
-def cross_validate(args, features, bag_labels):
-    cross_validate = {'c': [1e-6, 1e-5, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000],
-                      'lr': [0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001],
-                     'rho': [(a+1)/20 for a in range(18)],
-                      'k': [a+3 for a in range(40)]}
-    best_results = 0
-    
-    if 'lr' in args.cv:
+        y_pred, y_instance_pred = model.predict(x_val)
+        rec, prec, acc, f1 = calculate_metrics(y_pred, y_val, args.cm)
+        accuracies.append(acc)
+        print('Acc={}'.format(acc))
+    mean = average(accuracies)
+    print('Result of k-validation: mean = {}, std={}'.format(mean, standard_deviaton(accuracies, mean)))
+    return mean
+
+def cross_validate(args, dataset):
+    features, bag_labels  = dataset.return_training_set()
+    cross_validate = {'c': [1e-4, 0.01, 0.1, 1, 10, 1000],
+                      'lr': [1e-5, 1e-4, 1e-3],
+                     'ro': [(a+1)/10 for a in range(9)],
+                      'k': [3, 5, 7, 10],
+                      'clr': [1e-5, 1e-4, 1e-3],
+                      'iterations': [50, 100, 250, 500, 1000, 1500]}
+    best_c = 0
+    best_lr = 0
+    best_ro = 0
+    best_k = 0
+    best_clr = 0
+    best_iterations = 0
+    result_ro = []
+    result_kappa = []
+    print('Starting cross validation')
+    args.cardinality_lr = args.lr
+
+    if (args.cv == 'lr' or 'all' in args.cv) and args.kernel != 'svm':
+        print('Testing learning rate')
+        best_results = 0
         for param in cross_validate['lr']:
             args.lr = param
             results = k_validation(args, features, bag_labels)
             print("C-validation acc with lr={} is: {}".format(param, results))
-            if best_results < results:
+            if best_results <= results:
                 best_results = results
-          
-    if 'c' in args.cv:
+                best_param = param
+        args.lr = best_param
+        print('Selected lr parameter:{}'.format(args.lr))
+    args.cardinality_lr = args.lr
+
+    if 'c' is args.cv or 'all' in args.cv:
+        best_results = 0
+        print('Testing c')
         for param in cross_validate['c']:
             args.c = param
             results = k_validation(args, features, bag_labels)
             print("C-validation acc with C={} is: {}".format(param, results))
             if best_results < results:
                 best_results = results
-            
-                
-    if 'rho' in args.cv:
-        for param in cross_validate['rho']:
-            args.rho = param
-            results = k_validation(args, features, bag_labels)
-            print("C-validation acc with rho={} is: {}".format(param, results))
+                best_param = param
+        args.c = best_param
+        print('Selected c parameter:{}'.format(args.c))
 
-    if 'k' in args.cv:
+    if ('ro' in args.cv or 'all' in args.cv) and 'rmimn' in args.cardinality_potential:
+        print('Testing ro')
+        best_results = 0
+        for param in cross_validate['ro']:
+            args.ro = param
+            results = k_validation(args, features, bag_labels)
+            result_ro.append(results)
+            print("C-validation acc with ro={} is: {}".format(param, results))
+            if best_results <= results:
+                best_results = results
+                best_param = param
+        args.ro = best_param
+        print('Selected ro parameter:{}'.format(args.ro))
+
+    if ('k' in args.cv or 'all' in args.cv) and 'gmimn' in args.cardinality_potential:
+        print('Testing k')
+        best_results = 0
         for param in cross_validate['k']:
             args.k = param
             results = k_validation(args, features, bag_labels)
             print("C-validation acc with k={} is: {}".format(param, results))
+            result_kappa.append(results)
             if best_results < results:
                 best_results = results
+                best_param = param
+        args.k = best_param
+        print('Selected k parameter:{}'.format(args.k))
 
+    if (args.cv == 'cardinality_lr' or 'all' in args.cv) and args.kernel != 'svm':
+        print('Testing cardinality learning rate')
+        best_results = 0
+        for param in cross_validate['clr']:
+            args.cardinality_lr = param
+            results = k_validation(args, features, bag_labels)
+            print("C-validation acc with clr={} is: {}".format(param, results))
+            if best_results <= results:
+                best_results = results
+                best_param = param
+        args.clr = best_param
+        print('Selected clr parameter:{}'.format(args.clr))
+
+    if 'iter' in args.cv or 'all' in args.cv:
+        print('Testing max number of iterations')
+        best_results = 0
+        for param in cross_validate['iterations']:
+            args.iterations = param
+            results = k_validation(args, features, bag_labels)
+            print("C-validation acc with max iterations set  to {} is: {}".format(param, results))
+            if best_results < results:
+                best_results = results
+                best_param = param
+        args.iterations = best_param
+        print('Selected iterations  parameter:{}'.format(args.iterations))
+
+    if 'gmimn' in args.cardinality_potential and args.v:
+        visualize_kappa(args, result_kappa)
+
+    if 'rmimn' in args.cardinality_potential and args.v:
+        visualize_ro(args, result_ro)
+
+    print('Selected args={}'.format(args))
+    return args
 
 def run_parser(args):
     has_effect = False
@@ -121,20 +192,17 @@ def run_parser(args):
         try:
             dataset_path = 'data.{}'.format(args.dataset)
             mod = importlib.import_module(dataset_path)
-            features, bag_labels = mod.get_dataset(args.rd)
-
-            x_train, x_test, y_train, y_test = train_test_split(features, bag_labels, shuffle=False, test_size=0.2)
-            #x_train = [[[1, 1], [2,2]], [[1, 1], [2,2]], [[-1,-1],[-2,-2]], [[-1,-1],[-2,-2]], [[-1,1],[-2,2]], [[-1,1],[-2,2]], [[1,-1],[2,-2]], [[1,-1], [2,-2]],[[0, 1], [1,0]],[[100, 0], [1,1000]]]
-            #y_train = [1, -1, 1, -1, 1, -1, 1, -1, 1, -1]
-            if 'test' in args.split:
-                test_model(args, x_test, y_test)
-            if 'train' in args.split:
-                train_model(args, x_train, y_train)
-            if 'cv' in args.split:  # run
-                cross_validate(args, x_train, y_train)
+            dataset = mod.get_dataset(args)
             if 'run' in args.split:
-                run(args, features, bag_labels)
-                
+                run(args, dataset)
+            if 'test' in args.split:
+                test(args, dataset)
+            if 'train' in args.split:
+                train(args, dataset)
+            if 'cv' in args.split:  # run
+                best_args = cross_validate(args, dataset)
+                run(best_args, dataset)
+
         except Exception as e:
             logger.exception(e)
             logger.error('Script ended with an error')
@@ -152,22 +220,24 @@ def main():
                         choices=['bgd', 'svm', 'lp', 'qp'],
                         help='Select kernel for fitting model')
     parser.add_argument('dataset', nargs="?",
-                        choices=['fox', 'tiger', 'elephant', 'musk1', 'musk2', 'camelyon', 'synthetic', 'image'], help='Select the dataset')
+                        choices=['fox', 'tiger', 'elephant', 'musk1', 'musk2', 'image', 'noise'], help='Select the dataset')
     parser.add_argument('cardinality_potential', nargs="?",
                         choices=['mimn', 'rmimn', 'gmimn'],
                         help='Select the cardinality potential')
-    parser.add_argument('-rho', nargs='?', default=0.5, type=float,
-                        help='Select rho value used in rmimn potential')
-    parser.add_argument('-c', nargs='?', default=1e-4, type=float, help='Select value for C')
-    parser.add_argument('-iterations', nargs='?', default=1000, type=int,
+    parser.add_argument('-ro', nargs='?', default=0.5, type=float,
+                        help='Select ro value used in rmimn potential')
+    parser.add_argument('-c', nargs='?', default=1, type=float, help='Select value for C')
+    parser.add_argument('-iterations', nargs='?', default=1500, type=int,
                         help='Select number of iterations the model will train on')
     parser.add_argument('-k', nargs='?', default=1, type=int,
                         help='Select the number of bins used in gmimn potential')
-    parser.add_argument('-rd', nargs='?', default=42, type=int, help='Select the random seed')
+    parser.add_argument('-rs', nargs='?', default=42, type=int, help='Select the random seed')
     parser.add_argument('-v', nargs='?', default=False, type=bool, help='Visualize data')
-    parser.add_argument('-cv', nargs='?', default='c', choices=['c', 'lr', 'k', 'rho'], help='select which hyperparameter you want to cross validate model on')
-    parser.add_argument('-dl', nargs='?', default=True, type=bool, help='Disable logger')
-    parser.add_argument('-lr', nargs='?', default=1e-6, type=float, help='Learning rate')
+    parser.add_argument('-cv', nargs='?', default='all', choices=['c', 'lr', 'k', 'ro', 'clr', 'all'], help='Select which hyperparameter you want to cross validate model on')
+    parser.add_argument('-lr', nargs='?', default=1e-4, type=float, help='Learning rate')
+    parser.add_argument('-cm', nargs='?', default=False, type=bool, help='Display confusion matrix at the end of testing')
+    parser.add_argument('-norm', nargs='?', default=2, choices=[1, 2], help='Select reguralization norm')
+    parser.add_argument('-lpm', nargs='?', default='interior-point', choices=['interior-point', 'revised simplex', 'simplex'], help='Method for linear programming')
     run_parser(parser.parse_args())
 
 
