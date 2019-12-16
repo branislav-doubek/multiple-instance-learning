@@ -53,7 +53,7 @@ class Inference:
         :param label: label of an instance
         :return: float
         """
-        return label * (np.dot(feature, self.weights) + self.intercept)
+        return label * (np.matmul(feature, self.weights) + self.intercept)
 
     def inference_on_bag(self, features, bag_label):
         """
@@ -97,5 +97,4 @@ class Inference:
                 f_length = i
             if self.logger:
                 self.logger.debug('{}-iteration: current sum = {}, max sum = {}'.format(i, curr_sum, max_sum))
-
         return indexes[:f_length]

@@ -22,10 +22,8 @@ class MIL(Inference, BGD, Mi_SVM, Lp, Qp):
         :return: None
         """
         self.logger = logger
-        self.training_bags = []
-        self.testing_bags = []  # list for testing set
         self.cardinality = args.cardinality_potential  # cardinality type
-        self.ro = args.rho  # value of rho for RMIMN potential
+        self.ro = args.ro  # value of ro for RMIMN potential
         self.kernel = args.kernel  # Kernel type
         self.lamb = 1/args.c  #lambda parameter value
         self.max_iterations = args.iterations  # sets max iterations
@@ -35,10 +33,12 @@ class MIL(Inference, BGD, Mi_SVM, Lp, Qp):
         self.intercept = 0
         self.lr = args.lr
         self.cardinality_lr = args.lr
-        self.rd = np.random.RandomState(seed=args.rd)
+        self.rs = np.random.RandomState(seed=args.rs)
         self.loss_history = []
-         
-                
+        self.visualize = args.v # Visualize instance labels
+        self.norm = args.norm
+        self.lpm = args.lpm # linear programming method
+
     def append_training_bags(self, features, bag_labels):
         """
         Batches data into training bags
@@ -46,12 +46,13 @@ class MIL(Inference, BGD, Mi_SVM, Lp, Qp):
         :param bag_labels: lits of bag labels
         :return:None
         """
-
-        feature_dimension = len(features[0][0])
+        self.training_bags = [] # list for training set
+        feature_dimension = len(features[0][0]) # infers dimension of data
+        self.logger.debug('Appending training bags')
         if "lp" in self.kernel or "qp" in self.kernel:
             self.weights = np.zeros(feature_dimension)
         else:
-            self.weights = self.rd.rand(feature_dimension)
+            self.weights = self.rs.rand(feature_dimension) # bgd and svm kernel
         for instance, bag_label in zip(features, bag_labels):
             bag = Bag(instance, bag_label)
             self.training_bags.append(bag)
@@ -60,19 +61,20 @@ class MIL(Inference, BGD, Mi_SVM, Lp, Qp):
         """
         Batches data into testing bags
         :param features: list of bag features containing list of data points
-        :param bag_labels: lits of bag labels
         :return: None
         """
+        print(self.weights)
+        self.testing_bags = []  # list for testing set
         for instance in features:
             bag = Bag(instance)
             self.testing_bags.append(bag)
 
     def scoring_function(self, features, labels, bag_label):
         """
-        Function calculating score of the bag
-        :param features: np array
-        :param labels: list of 1 and 0 with size of len(features)
-        :param bag_label: int 1 or 0
+        Calculates score of bag
+        :param features: np array containing instances
+        :param labels: list containing instance labels
+        :param bag_label: bag label {-1, 1}
         :return: score of the bag
         """
         score = 0
@@ -87,12 +89,22 @@ class MIL(Inference, BGD, Mi_SVM, Lp, Qp):
         return score
 
     def loss_function(self):
+        """
+        Calculates loss function on dataset
+        :returns:
+        """
         loss = 0
         for bag in self.training_bags:
             pos_bag_labels = self.inference_on_bag(bag.features, bag.bag_label)
             neg_bag_labels = self.inference_on_bag(bag.features, -bag.bag_label)
             bag_loss = self.calculate_zeta(bag.features, bag.bag_label, pos_bag_labels, neg_bag_labels)
             loss += bag_loss
+        if self.norm == 1:
+            for weight in self.weights:
+                loss+= abs(weight)*self.lamb/2
+        else:
+            for weight in self.weights:
+                loss += (weight**2)*self.lamb/2
         return loss
 
     def predict(self, features):
@@ -101,27 +113,44 @@ class MIL(Inference, BGD, Mi_SVM, Lp, Qp):
         :param features: list of features used for prediction
         :return: accuracy of model
         """
+        #Instance based weights for noise dataset
+        #self.weights = np.array([3.52007138, 3.57159067])
+        #self.intercept = -3.5305451486024304
+
+        #Instance based weights for image dataset
+        #self.weights = np.array([-2.44514843e-05,  7.84113313e-03, -5.66825165e-05])
+        #self.intercept = -0.99965145
+
         self.append_testing_bags(features)
-        pred_y = []
+        self.testing_logger = logger
+        self.testing_logger.debug('Testing debugger Initiated\n')
+        pred_bag_labels = []
+        pred_instance_labels = []
         for t_bag in self.testing_bags:
-            guessed_label = self.predict_bag_label(t_bag.features)
-            pred_y.append(guessed_label)
-        return pred_y
+            guessed_label, instance_labels = self.predict_bag_label(t_bag.features)
+            pred_bag_labels.append(guessed_label)
+            pred_instance_labels.append(instance_labels)
+        return pred_bag_labels, pred_instance_labels
 
     def predict_bag_label(self, features):
         """
-        Determines bag label of unseen bag
+        Predicts bag label and  on unseen bag using inference
         :param features: list of instances
         :return: bag label {-1,1}
         """
+        self.testing_logger.debug('Predicting bag label on testing bag\n')
         positive_bag_instances = self.inference_on_bag(features, 1)  # bag is positive find labels
         negative_bag_instances = self.inference_on_bag(features, -1)  # bag is negative find labels
+        self.testing_logger.debug('Positive bag label instances: {}\n'.format(positive_bag_instances))
+        self.testing_logger.debug('Negative bag label instances: {}\n'.format(negative_bag_instances))
         score_positive = self.scoring_function(features, positive_bag_instances, 1)  # calculate positive score
         score_negative = self.scoring_function(features, negative_bag_instances, -1)  # calculate negative score
+        self.testing_logger.debug('Positive bag label score: {}\n'.format(score_positive))
+        self.testing_logger.debug('Negative bag label score: {}\n'.format(score_negative))
         if score_positive > score_negative:  # determining maximum score
-            return 1
+            return 1, positive_bag_instances
         else:
-            return -1
+            return -1, negative_bag_instances
 
     def fit(self, features, bag_labels):
         """
@@ -136,10 +165,15 @@ class MIL(Inference, BGD, Mi_SVM, Lp, Qp):
         if 'bgd' in self.kernel:
             self.bgd_train()
         if 'lp' in self.kernel:
+            self.norm=1
             self.lp_train()
         if 'qp' in self.kernel:
             self.qp_train()
-        self.logger = None
-        
+        self.logger = None #Unable to save model to pkl if logger is part of class
+        #print('Vahy: {}, intercept: {}'.format(self.weights, self.intercept))
+
     def return_loss_history(self):
         return self.loss_history
+
+    def return_weights(self):
+        return self.weights, self.intercept

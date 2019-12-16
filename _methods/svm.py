@@ -7,13 +7,15 @@ class Mi_SVM:
     @ignore_warnings(category=ConvergenceWarning)
     def svm_train(self):
         self.logger.debug('Starting svm\n')
-        clf = LinearSVC(loss='squared_hinge', random_state=0, max_iter=1, dual=True, C=1/self.lamb)
+        clf = LinearSVC(loss='squared_hinge', random_state=0, max_iter=1, C=1/self.lamb)
         epochs = 0
         labels_changed = True
         last_labels = []
+        print('SVM started')
         while labels_changed and epochs <= self.max_iterations:
             loss = self.loss_function()
-            self.logger.debug('Loss={}'.format(loss))
+            if epochs % 1 == 0:
+                self.logger.error('Epoch={}: Loss = {}'.format(epochs,loss))
             self.loss_history.append(loss)
             labels = []
             features = []
