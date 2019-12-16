@@ -55,8 +55,8 @@ class Qp:
         for _ in range(self.max_iterations):
             d, n = len(self.weights), len(self.training_bags)
             self.logger.debug(self.loss_function())
-            p = self.c/2 * np.diag(
-                np.r_[np.ones(d),  2.e-308*np.ones(n + 2 * self.k + 1)])
+            p = self.lamb/2 * np.diag(
+                np.r_[np.ones(d),  1e-108*np.ones(n + 2 * self.k + 1)])
             q = np.r_[np.zeros(d + 2*self.k + 1), np.ones(n)]
             g = self.bags_to_matrix()
             h = np.r_[-np.ones(n), np.zeros(n)]

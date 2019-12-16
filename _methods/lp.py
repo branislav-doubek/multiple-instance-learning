@@ -45,6 +45,7 @@ class Lp:
                         g[counter][d + 1 + self.k + k_value] += -1
             g[counter][d + 1 + 2 * self.k + counter] = 1  # negative cardinality weights grad
             counter += 1
+            p_matrix = np.r_
         return np.r_[g, np.c_[np.zeros((n, len(self.weights) + 2 * self.k + 1)), np.diag(np.ones(n))]]
 
     def lp_train(self):
@@ -55,34 +56,44 @@ class Lp:
         :return: None
         """
         filterwarnings('ignore')
-        cond = True
+        max_lr = self.lr
+        epochs = 0
         last_loss  = float('inf')
         for epoch in range(self.max_iterations):
+            #print(self.weights)
             loss = self.loss_function()
-            self.logger.debug('Vahy={}, b={}, pos_c={}, neg_c={}, lr={}, '
-                              'c_lr={}, loss={}'.format(self.weights,
-                                                        self.intercept,
-                                                        self.pos_c_weights,
-                                                        self.neg_c_weights,
-                                                        self.lr,
-                                                        self.cardinality_lr, loss))
-            last_loss = loss
+            self.logger.error('{}-th iteration, loss = {}'.format(epoch, loss))
+            self.loss_history.append(loss)
             d, n = len(self.weights), len(self.training_bags)  # basic dimensions
-            p = np.r_[self.c*np.ones(d, dtype=float), np.zeros(2 * self.k + 1, dtype=float), np.ones(n, dtype=float)]  # creates P matrix
+            p = np.r_[self.lamb*np.ones(d, dtype=float), np.zeros(2 * self.k + 1, dtype=float), np.ones(n, dtype=float)]  # creates P matrix
             g = self.bags_to_matrix()  # creates G matrix
             h = np.r_[-np.ones(n), np.zeros(n)]  # creates h matrix
-            sol = linprog(p, g, h, method='interior-point')  # finds solution to linear programming problem
-            self.get_weights(sol['x'])  # applies solution for new weights
+            sol = linprog(p, g, h, method=self.lpm)  # finds solution to linear programming problem
+            #print(loss)
+            #print(g)
+            if epochs >= self.max_iterations or self.lr <= max_lr/100:
+                break
+            if last_loss <= loss:
+                self.lr /= 10
+                epochs +=1
+            else:
+                self.get_weights(sol['x'])  # applies solution for new weights
+                last_loss = loss
+                epochs += 1
 
 
-    
     def get_weights(self, sol):
         """
         :param sol:
         :return:
         """
+
         d, n = len(self.weights), len(self.training_bags)
         self.weights -= self.lr * sol[:d]
         self.intercept -= self.lr * sol[d]
         self.pos_c_weights -= self.cardinality_lr * sol[d+1:d+1+self.k]
         self.neg_c_weights -= self.cardinality_lr * sol[d + 1 + self.k:d + 1 + 2 * self.k]
+        #self.logger.error('New weights: {}\n'.format(self.weights))
+        #self.logger.error('New intercept: {}\n'.format(self.intercept))
+        #self.logger.error('New pos c weights: {}\n'.format(self.pos_c_weights))
+        #self.logger.error('New neg c weights: {}\n'.format(self.neg_c_weights))
