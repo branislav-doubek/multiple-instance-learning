@@ -63,7 +63,7 @@ class MIL(Inference, BGD, Mi_SVM, Lp, Qp):
         :param features: list of bag features containing list of data points
         :return: None
         """
-        print(self.weights)
+        #print(self.weights)
         self.testing_bags = []  # list for testing set
         for instance in features:
             bag = Bag(instance)

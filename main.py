@@ -82,9 +82,7 @@ def cross_validate(args, dataset):
     cross_validate = {'c': [1e-4, 0.01, 0.1, 1, 10, 1000],
                       'lr': [1e-5, 1e-4, 1e-3],
                      'ro': [(a+1)/10 for a in range(9)],
-                      'k': [3, 5, 7, 10],
-                      'clr': [1e-5, 1e-4, 1e-3],
-                      'iterations': [50, 100, 250, 500, 1000, 1500]}
+                      'k': [3, 5, 7, 10]}
     best_c = 0
     best_lr = 0
     best_ro = 0
@@ -150,32 +148,6 @@ def cross_validate(args, dataset):
                 best_param = param
         args.k = best_param
         print('Selected k parameter:{}'.format(args.k))
-
-    if (args.cv == 'cardinality_lr' or 'all' in args.cv) and args.kernel != 'svm':
-        print('Testing cardinality learning rate')
-        best_results = 0
-        for param in cross_validate['clr']:
-            args.cardinality_lr = param
-            results = k_validation(args, features, bag_labels)
-            print("C-validation acc with clr={} is: {}".format(param, results))
-            if best_results <= results:
-                best_results = results
-                best_param = param
-        args.clr = best_param
-        print('Selected clr parameter:{}'.format(args.clr))
-
-    if 'iter' in args.cv or 'all' in args.cv:
-        print('Testing max number of iterations')
-        best_results = 0
-        for param in cross_validate['iterations']:
-            args.iterations = param
-            results = k_validation(args, features, bag_labels)
-            print("C-validation acc with max iterations set  to {} is: {}".format(param, results))
-            if best_results < results:
-                best_results = results
-                best_param = param
-        args.iterations = best_param
-        print('Selected iterations  parameter:{}'.format(args.iterations))
 
     if 'gmimn' in args.cardinality_potential and args.v:
         visualize_kappa(args, result_kappa)
