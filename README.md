@@ -3,13 +3,9 @@
 Multiple instance learning framework which uses cardinality potential for infering bag labels.
 
 ## Prerequisites
-Install required packages:
+After creating virtual environment, install required packages by running:
 ```
-quadprog - pip install quadprog
-scipy - pip install scipy
-numpy - pip install numpy
-scikit-learn - pip install scikit-learn
-pandas - pip install pandas
+pip3 install -r requirements.txt 
 ```
 ## Installation
 Download files using:
@@ -19,8 +15,8 @@ git clone https://github.com/Frovis/MultipleInstanceLearning.git
 Download datasets for multiple instance learning at:
 * matlab files: [Fox, Elephant, Tiger](http://www.cs.columbia.edu/~andrews/mil/datasets.html), 
 * clean data files: [Musk1](https://archive.ics.uci.edu/ml/datasets/Musk+(Version+1)) and [Musk2](https://archive.ics.uci.edu/ml/datasets/Musk+(Version+2))
+and extract them into data folder of our project.
 
-and place them into data folder of our project.
 ## Runinng sript
 For starting the application run: 
 ```
@@ -69,8 +65,7 @@ We provide list of parameters for our classifier:
 -cv = cross-validate on hyperparameter (Described in section below)
 -lr = learning rate [float]
 -cm = visualize confusion matrx [bool]
--s = split ratio for training/testing[float]
--norm = regularization norm ['l1', 'l2'] (Only for bgd)
+-norm = regularization norm [1, 2] (Only for bgd)
 -lpm = linear programming methods ['interior-point', 'revised simplex', 'simplex'] (Only for lp)
 ```
 ### Cross validation
@@ -87,7 +82,7 @@ If we want to tune all hyperparameters of classifier we can just run cross valid
 ## Example
 If we want to cross validate rho parameter using batch gradient descent with rmimn cardinality potential on fox dataset:
 ```
-python3 main.py cv bgd fox rmimn -cv='rho'
+python3 main.py cv bgd fox rmimn -cv='ro'
 ```
 For visualization of loss function of mi-SVM algorithm with gmimn potential and kappa set to 10 run on musk1 dataset:
 ```
