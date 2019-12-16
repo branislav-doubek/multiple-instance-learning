@@ -2,11 +2,6 @@
 
 Multiple instance learning framework which uses cardinality potential for infering bag labels.
 
-## Prerequisites
-After creating virtual environment, install required packages by running:
-```
-pip3 install -r requirements.txt 
-```
 ## Installation
 Download files using:
 ```
