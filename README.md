@@ -34,7 +34,7 @@ cv - uses k-fold cross validation on training dataset to estimate hyperparemeter
 kernel:
 ```
 bgd = batch gradient descent
-inf-svm = inference based SVM
+svm = inference based SVM
 lp = linear programming
 ```
 dataset:
@@ -75,8 +75,6 @@ If we run cross-validation mode, k-fold cross validation is called on training d
 -c
 -ro
 -k
--clr
--iterations
 ```
 If we want to tune all hyperparameters of classifier we can just run cross validation mode without more parameters, but for cross-validating classifier on single parameter(i.e. C paramter) we can just add -cv='c' for validation only on C parameter.
 ## Example
