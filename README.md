@@ -13,8 +13,8 @@ Download files using:
 git clone https://github.com/Frovis/MultipleInstanceLearning.git
 ```
 Download datasets for multiple instance learning at:
-* matlab files: [Fox, Elephant, Tiger](http://www.cs.columbia.edu/~andrews/mil/datasets.html), 
-* clean data files: [Musk1](https://archive.ics.uci.edu/ml/datasets/Musk+(Version+1)) and [Musk2](https://archive.ics.uci.edu/ml/datasets/Musk+(Version+2))
+* matlab files: [Fox, Elephant, Tiger, Musk1, Musk2](http://www.cs.columbia.edu/~andrews/mil/datasets.html)
+
 and extract them into data folder of our project.
 
 ## Runinng sript
