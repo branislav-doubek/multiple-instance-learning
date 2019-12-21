@@ -22,7 +22,7 @@ class BatchGradientDescent:
                 self.lr /= 10
                 epochs +=1
             else:
-                if self.bgdm == 'stochastic'
+                if self.bgdm == 2:
                     self.update_weights(grad)
                 else:
                     self.momentum_weights(grad)
