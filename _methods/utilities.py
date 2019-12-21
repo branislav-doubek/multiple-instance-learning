@@ -7,7 +7,7 @@ import pickle
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from math import sqrt
-
+from itertools import combinations
 
 def shuffle_dataset(features, bag_label, random_seed=42, instance_labels=None):
     """
@@ -324,3 +324,11 @@ def standard_deviaton(lst, mean):
         std += (element-mean)**2
     std = std/(len(lst)-1)
     return sqrt(std)
+
+def multiply_features(list_of_instance):
+    num, length = list_of_instance.shape
+    all_combinations = list(combinations([a for a in range(length)],2))
+    for el1, el2 in all_combinations:
+        #print('({},{}) combination'.format(el1, el2))
+        list_of_instance = np.c_[list_of_instance, list_of_instance[:,el1][:,] * list_of_instance[:,el2][:,]]
+    return list_of_instance

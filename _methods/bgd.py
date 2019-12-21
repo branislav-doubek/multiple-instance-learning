@@ -13,8 +13,8 @@ class BatchGradientDescent:
         while True:
             loss, grad = self.batch_hinge_loss()
             #Uncomment for loss visualization
-            #if epochs % 1 == 0:
-            #    self.logger.error('Epoch={}: Loss = {}'.format(epochs,loss))
+            if epochs % 2 == 0:
+                self.logger.error('Epoch={}: Loss = {}'.format(epochs,loss))
             self.loss_history.append(loss)
             if epochs >= self.max_iterations or self.lr <= 1e-8 or loss < 0.01:
                 break
@@ -22,7 +22,10 @@ class BatchGradientDescent:
                 self.lr /= 10
                 epochs +=1
             else:
-                self.update_weights(grad)
+                if self.bgdm == 'stochastic'
+                    self.update_weights(grad)
+                else:
+                    self.momentum_weights(grad)
                 last_loss = loss
                 epochs += 1
 
@@ -95,6 +98,14 @@ class BatchGradientDescent:
         self.logger.info('New neg c weights: {}\n'.format(self.neg_c_weights))
         self.neg_c_weights = c_weights[self.k:]
 
+    def momentum_weights(self,grad):
+        d = len(self.weights)
+        weights = np.r_[self.weights, self.intercept, self.pos_c_weights, self.neg_c_weights]
+        delta_weights = self.momentun_beta*self.momentum - self.lr * grad
+        self.weights = weights[:d] + delta_weights[:d]
+        self.intercept = weights[d] + delta_weights[d]
+        self.pos_c_weights = weights[d+1:d+1+self.kappa] + delta_weights[d+1:d+1+self.kappa]
+        self.neg_c_weights = weights[d+1+self.kappa:] + delta_weights[d+1+self.kappa:]
 
     def calculate_zeta(self, features, b_label, true_labels, false_labels):
         """
