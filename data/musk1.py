@@ -1,15 +1,26 @@
 import numpy as np
 import scipy.io
-from _methods.utilities import shuffle_dataset, into_dictionary, train_test_split
+from _methods.utilities import shuffle_dataset, train_test_split, into_dictionary, multiply_features
 import os
+import pickle
 
 def get_dataset(args):
     """
-    Loads and batches elephant dataset into feature and bag label lists
+    Loads and batches musk1 dataset into feature and bag label lists
     :return: list(features), list(bag_labels)
     """
-    dataset = Dataset(args)
-    return dataset
+    filepath = os.getcwd() + '/data/{}_dataset.pkl'.format(args.dataset)
+    if (os.path.exists(filepath)):
+        print('Dataset loaded')
+        with open(filepath, 'rb') as dataset_file:
+            dataset =  pickle.load(dataset_file)
+            return dataset
+    else:
+        dataset = Dataset(args)
+        print('Dataset loaded')
+        file = open(filepath, 'wb')
+        pickle.dump(dataset, file)
+        return dataset
 
 class Dataset():
     def __init__(self, args):
@@ -23,6 +34,7 @@ class Dataset():
         dataset = scipy.io.loadmat(os.getcwd() + '/data/musk1norm_matlab.mat')  # loads elephant dataset
         instance_bag_ids = np.array(dataset['bag_ids'])[0]
         instance_features = np.array(dataset['features'].todense())  # 1 feature point contains 230 dim vector
+        instance_features = multiply_features(instance_features)
         instance_labels = np.array(dataset['labels'].todense())[0]  # 100 positive and 100 bag negative labels
         bag_features = into_dictionary(instance_bag_ids,
                                        instance_features)
