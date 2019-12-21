@@ -104,8 +104,8 @@ class BatchGradientDescent:
         delta_weights = self.momentun_beta*self.momentum - self.lr * grad
         self.weights = weights[:d] + delta_weights[:d]
         self.intercept = weights[d] + delta_weights[d]
-        self.pos_c_weights = weights[d+1:d+1+self.kappa] + delta_weights[d+1:d+1+self.kappa]
-        self.neg_c_weights = weights[d+1+self.kappa:] + delta_weights[d+1+self.kappa:]
+        self.pos_c_weights = weights[d+1:d+1+self.k] + delta_weights[d+1:d+1+self.k]
+        self.neg_c_weights = weights[d+1+self.k:] + delta_weights[d+1+self.k:]
 
     def calculate_zeta(self, features, b_label, true_labels, false_labels):
         """
