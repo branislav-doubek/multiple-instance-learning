@@ -13,7 +13,7 @@ class BatchGradientDescent:
         while True:
             loss, grad = self.batch_hinge_loss()
             #Uncomment for loss visualization
-            if epochs % 2 == 0:
+            if epochs % 10 == 0:
                 print('Epoch={}: Loss = {}'.format(epochs,loss))
             self.loss_history.append(loss)
             if epochs >= self.max_iterations or self.lr <= 1e-8 or loss < 0.01:
