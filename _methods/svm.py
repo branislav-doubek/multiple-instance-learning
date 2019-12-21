@@ -11,11 +11,10 @@ class Mi_SVM:
         epochs = 0
         labels_changed = True
         last_labels = []
-        print('SVM started')
         while labels_changed and epochs <= self.max_iterations:
             loss = self.loss_function()
-            #if epochs % 1 == 0:
-            #    self.logger.error('Epoch={}: Loss = {}'.format(epochs,loss))
+            if epochs % 1 == 0:
+                self.logger.error('Epoch={}: Loss = {}'.format(epochs,loss))
             self.loss_history.append(loss)
             labels = []
             features = []

@@ -1,16 +1,26 @@
 import numpy as np
 import scipy.io
-from _methods.utilities import shuffle_dataset, train_test_split, into_dictionary
+from _methods.utilities import shuffle_dataset, train_test_split, into_dictionary, multiply_features
 import os
+import pickle
 
 def get_dataset(args):
     """
-    Loads and batches elephant dataset into feature and bag label lists
+    Loads and batches tiger dataset into feature and bag label lists
     :return: list(features), list(bag_labels)
     """
-    dataset = Dataset(args)
-    return dataset
-
+    filepath = os.getcwd() + '/data/{}_dataset.pkl'.format(args.dataset)
+    if (os.path.exists(filepath)):
+        print('Dataset loaded')
+        with open(filepath, 'rb') as dataset_file:
+            dataset =  pickle.load(dataset_file)
+            return dataset
+    else:
+        dataset = Dataset(args)
+        print('Dataset loaded')
+        file = open(filepath, 'wb')
+        pickle.dump(dataset, file)
+        return dataset
 
 class Dataset():
     def __init__(self, args):
@@ -25,13 +35,14 @@ class Dataset():
         instance_bag_ids = np.array(dataset['bag_ids'])[0]
         instance_features = np.array(dataset['features'].todense())
         instance_labels = np.array(dataset['labels'].todense())[0]
+        instance_features = multiply_features(instance_features)
         bag_features = into_dictionary(instance_bag_ids,
                                        instance_features)  # creates dictionary whereas key is bag and values are
         # instance features
         bag_labels = into_dictionary(instance_bag_ids,
                                      instance_labels)  # creates dictionary whereas key is bag and values are instance
         for i in range(1, 201):  # goes through whole dataset
-            self.features.append(np.array(bag_features.pop(i)))
+            self.features.append(bag_features.pop(i))
             self.bag_labels.append(max(bag_labels[i]))
         self.random_shuffle()
 

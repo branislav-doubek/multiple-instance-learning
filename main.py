@@ -3,7 +3,6 @@ import importlib
 import argparse
 import logging
 from _methods.utilities import *
-
 from mil import MIL
 import pickle
 import os
@@ -192,7 +191,7 @@ def main():
                         choices=['bgd', 'svm', 'lp', 'qp'],
                         help='Select kernel for fitting model')
     parser.add_argument('dataset', nargs="?",
-                        choices=['fox', 'tiger', 'elephant', 'musk1', 'musk2', 'image', 'noise'], help='Select the dataset')
+                        choices=['fox', 'tiger', 'elephant', 'musk1', 'musk2', 'image', 'noise', 'camelyon', 'synthetic'], help='Select the dataset')
     parser.add_argument('cardinality_potential', nargs="?",
                         choices=['mimn', 'rmimn', 'gmimn'],
                         help='Select the cardinality potential')
@@ -210,6 +209,7 @@ def main():
     parser.add_argument('-cm', nargs='?', default=False, type=bool, help='Display confusion matrix at the end of testing')
     parser.add_argument('-norm', nargs='?', default=2, choices=[1, 2], help='Select reguralization norm')
     parser.add_argument('-lpm', nargs='?', default='interior-point', choices=['interior-point', 'revised simplex', 'simplex'], help='Method for linear programming')
+    parser.add_argument('-bgdm', nargs='?', default=1, choices=[1,2], help='Select batch gradient method, 1-momentum, 2- classical bgd')
     run_parser(parser.parse_args())
 
 
