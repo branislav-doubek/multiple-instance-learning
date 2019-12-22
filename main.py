@@ -78,7 +78,7 @@ def k_validation(args, features, bag_labels, k_valid=5):
 
 def cross_validate(args, dataset):
     features, bag_labels  = dataset.return_training_set()
-    cross_validate = {'c': [1e-4, 0.01, 0.1, 1, 10, 1000],
+    cross_validate = {'c': [0.01, 0.1, 1, 10, 1000],
                       'lr': [1e-5, 1e-4, 1e-3],
                      'ro': [(a+1)/10 for a in range(9)],
                       'k': [3, 5, 7, 10]}
