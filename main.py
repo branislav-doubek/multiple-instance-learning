@@ -207,7 +207,7 @@ def main():
     parser.add_argument('-cv', nargs='?', default='all', choices=['c', 'lr', 'k', 'ro', 'clr', 'all'], help='Select which hyperparameter you want to cross validate model on')
     parser.add_argument('-lr', nargs='?', default=1e-4, type=float, help='Learning rate')
     parser.add_argument('-cm', nargs='?', default=False, type=bool, help='Display confusion matrix at the end of testing')
-    parser.add_argument('-norm', nargs='?', default=2, choices=[1, 2], help='Select reguralization norm')
+    parser.add_argument('-norm', nargs='?', default=2, type=int, help='Select reguralization norm')
     parser.add_argument('-lpm', nargs='?', default='interior-point', choices=['interior-point', 'revised simplex', 'simplex'], help='Method for linear programming')
     parser.add_argument('-bgdm', nargs='?', default=1, choices=[1,2], help='Select batch gradient method, 1-momentum, 2- classical bgd')
     parser.add_argument('-mom', nargs='?', default=0.5, type=float, help='Momentum decay')
