@@ -210,7 +210,7 @@ def main():
     parser.add_argument('-norm', nargs='?', default=2, choices=[1, 2], help='Select reguralization norm')
     parser.add_argument('-lpm', nargs='?', default='interior-point', choices=['interior-point', 'revised simplex', 'simplex'], help='Method for linear programming')
     parser.add_argument('-bgdm', nargs='?', default=1, choices=[1,2], help='Select batch gradient method, 1-momentum, 2- classical bgd')
-    parser.add_argument('-mom', nargs='?', default=0.7, type=float, help='Momentum decay')
+    parser.add_argument('-mom', nargs='?', default=0.5, type=float, help='Momentum decay')
     run_parser(parser.parse_args())
 
 
