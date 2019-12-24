@@ -65,7 +65,7 @@ class Dataset():
                 if np.array(len(tsd['instances'][0])) == 32:
                     self.training_data.append(np.array(tsd['instances']))
                     self.training_labels.append(-tsd['bag_label'])
-
+        '''
         for instance in list_of_positive_testing_bags:  # positive instances
             with open(instance, 'rb') as tfh:
                 tsd = pickle.load(tfh)
@@ -79,8 +79,9 @@ class Dataset():
                 if np.array(len(tsd['instances'][0])) == 32:
                     self.testing_data.append(np.array(tsd['instances']))
                     self.testing_labels.append(-tsd['bag_label'])
+        '''
         self.training_data, self.training_labels = shuffle_dataset(self.training_data, self.training_labels, self.rs)
-        self.testing_data, self.testing_labels = shuffle_dataset(self.testing_data, self.testing_labels, self.rs)
+        #self.testing_data, self.testing_labels = shuffle_dataset(self.testing_data, self.testing_labels, self.rs)
 
 
     def return_training_set(self):
