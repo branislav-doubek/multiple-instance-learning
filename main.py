@@ -61,17 +61,27 @@ def k_validation(args, features, bag_labels, k_valid=5):
     :return:
     """
     accuracies = []
-    for cur_iteration in range(k_valid):
+    if 'validate' in args.split and args.valid_iter <= k_valid:
+        cur_iteration = args.valid_iter
         x_train, x_val, y_train, y_val = batch_set(features, bag_labels, cur_iteration, k_valid)
         model = MIL(args)
         model.fit(x_train, y_train)
         y_pred, y_instance_pred = model.predict(x_val)
         rec, prec, acc, f1 = calculate_metrics(y_pred, y_val, args.cm)
-        accuracies.append(acc)
         print('Acc={}'.format(acc))
-    mean = average(accuracies)
-    print('Result of k-validation: mean = {}, std={}'.format(mean, standard_deviaton(accuracies, mean)))
-    return mean
+        return acc
+    else:
+        for cur_iteration in range(k_valid):
+            x_train, x_val, y_train, y_val = batch_set(features, bag_labels, cur_iteration, k_valid)
+            model = MIL(args)
+            model.fit(x_train, y_train)
+            y_pred, y_instance_pred = model.predict(x_val)
+            rec, prec, acc, f1 = calculate_metrics(y_pred, y_val, args.cm)
+            accuracies.append(acc)
+            print('Acc={}'.format(acc))
+        mean = average(accuracies)
+        print('Result of k-validation: mean = {}, std={}'.format(mean, standard_deviaton(accuracies, mean)))
+        return mean
 
 def cross_validate(args, dataset):
     features, bag_labels  = dataset.return_training_set()
@@ -211,6 +221,7 @@ def main():
     parser.add_argument('-lpm', nargs='?', default='interior-point', choices=['interior-point', 'revised simplex', 'simplex'], help='Method for linear programming')
     parser.add_argument('-bgdm', nargs='?', default=1, choices=[1,2], help='Select batch gradient method, 1-momentum, 2- classical bgd')
     parser.add_argument('-mom', nargs='?', default=0.5, type=float, help='Momentum decay')
+    parser.add_argument('-valid_iter', nargs='?', default=1, type=int, help='Select part of training dataset to validate model on')
     run_parser(parser.parse_args())
 
 
