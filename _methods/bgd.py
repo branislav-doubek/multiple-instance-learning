@@ -34,7 +34,9 @@ class BatchGradientDescent:
         Calculates the loss function across all bags and its gradients
         :return: total loss and gradient
         """
-        grad1 = np.zeros(len(self.weights)+1, dtype=float)  # gradients of normal weights + intercept point
+        d=len(self.weights)
+        grad = np.zeros(d, dtype=float)  # gradients of normal weights + intercept point
+        intercept = 0
         total_loss = 0
         grad2 = np.zeros(2 * self.k, dtype=float) # gradients of cardinality weights
         for bag in self.training_bags:
@@ -47,10 +49,8 @@ class BatchGradientDescent:
             total_loss += bag_loss
             self.logger.info('Bag loss = {}\n'.format(bag_loss))
             if bag_loss != 0:
-                for feature, label in zip(bag.features, total_instance_list):
-                    for index, element in enumerate(feature * label):
-                        grad1[index] += element # weights
-                    grad1[-1] += label # intercept point
+                grad+= np.dot(bag.features[:][:].T,total_instance_list)
+                intercept += sum(total_instance_list)
                 num_instances = len(pos_bag_labels) #
                 pos_ratio = sum(pos_bag_labels) / num_instances
                 neg_ratio = sum(neg_bag_labels) / num_instances
@@ -69,14 +69,14 @@ class BatchGradientDescent:
                         grad2[0] += 1
                         grad2[1] += -1
         if self.norm == 2: # reguralization norm l2
-            grad1[:len(self.weights)] += self.lamb * self.weights
+            grad += self.lamb * self.weights
             for weight in self.weights:
                 total_loss += self.lamb * (weight ** 2)/2
         else: # reguralization norm l1
-            grad1[:len(self.weights)] += self.lamb / 2 * np.sign(self.weights)
+            grad += self.lamb / 2 * np.sign(self.weights)
             for weight in self.weights:
                 total_loss += self.lamb * abs(weight)/2
-        grad = np.r_[grad1, grad2]
+        grad = np.r_[grad, intercept, grad2]
         return total_loss, grad
 
     def update_weights(self, grad):
@@ -101,11 +101,11 @@ class BatchGradientDescent:
     def momentum_weights(self,grad):
         d = len(self.weights)
         weights = np.r_[self.weights, self.intercept, self.pos_c_weights, self.neg_c_weights]
-        delta_weights = self.momentun_beta*self.momentum - self.lr * grad
-        self.weights = weights[:d] + delta_weights[:d]
-        self.intercept = weights[d] + delta_weights[d]
-        self.pos_c_weights = weights[d+1:d+1+self.k] + delta_weights[d+1:d+1+self.k]
-        self.neg_c_weights = weights[d+1+self.k:] + delta_weights[d+1+self.k:]
+        self.momentum = self.momentun_beta*self.momentum - self.lr * grad
+        self.weights = weights[:d] + self.momentum[:d]
+        self.intercept = weights[d] + self.momentum[d]
+        self.pos_c_weights = weights[d+1:d+1+self.k] + self.momentum[d+1:d+1+self.k]
+        self.neg_c_weights = weights[d+1+self.k:] + self.momentum[d+1+self.k:]
 
     def calculate_zeta(self, features, b_label, true_labels, false_labels):
         """
