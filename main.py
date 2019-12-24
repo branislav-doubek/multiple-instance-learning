@@ -2,6 +2,7 @@ import warnings
 import importlib
 import argparse
 import logging
+import joblib
 from _methods.utilities import *
 from mil import MIL
 import pickle
@@ -17,8 +18,7 @@ def train(args, dataset):
     if args.v:
         loss = model.return_loss_history()
         visualize_loss(args, loss)
-    file = open(filepath, 'wb')
-    pickle.dump(model, file)
+    pickle.dump(model, filepath)
 
 def test(args, dataset):
     x_test, y_test = dataset.return_testing_set()
@@ -65,9 +65,6 @@ def k_validation(args, features, bag_labels, k_valid=5):
         x_train, x_val, y_train, y_val = batch_set(features, bag_labels, cur_iteration, k_valid)
         model = MIL(args)
         model.fit(x_train, y_train)
-        filepath = os.getcwd() + model_path(args, cur_iteration)
-        file = open(filepath, 'wb')
-        pickle.dump(model, file)
         y_pred, y_instance_pred = model.predict(x_val)
         rec, prec, acc, f1 = calculate_metrics(y_pred, y_val, args.cm)
         accuracies.append(acc)
@@ -81,7 +78,7 @@ def cross_validate(args, dataset):
     cross_validate = {'c': [0.01, 0.1, 1, 10, 1000],
                       'lr': [1e-5, 1e-4, 1e-3],
                      'ro': [(a+1)/10 for a in range(9)],
-                      'k': [3, 5, 7, 10]}
+                      'k': [2,3, 4, 5, 7, 10, 15, 20]}
     best_c = 0
     best_lr = 0
     best_ro = 0
@@ -173,6 +170,9 @@ def run_parser(args):
             if 'cv' in args.split:  # run
                 best_args = cross_validate(args, dataset)
                 run(best_args, dataset)
+            if 'validate' in args.split:
+                features, bag_labels  = dataset.return_training_set()
+                k_validation(args, features, bag_labels)
 
         except Exception as e:
             logger.exception(e)
@@ -185,7 +185,7 @@ def run_parser(args):
 def main():
 
     parser = argparse.ArgumentParser(description='Run examples from MIL framework:')
-    parser.add_argument('split', nargs="?", choices=['train', 'test', 'cv' ,'run'],
+    parser.add_argument('split', nargs="?", choices=['train', 'test', 'cv' ,'run', 'validate'],
                         help='select action you want to perform with model')
     parser.add_argument('kernel', nargs="?",
                         choices=['bgd', 'svm', 'lp', 'qp'],
