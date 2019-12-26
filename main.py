@@ -64,6 +64,7 @@ def k_validation(args, features, bag_labels, k_valid=5):
     if 'validate' in args.split and args.valid_iter <= k_valid:
         cur_iteration = args.valid_iter
         x_train, x_val, y_train, y_val = batch_set(features, bag_labels, cur_iteration, k_valid)
+        print(len(x_val))
         model = MIL(args)
         model.fit(x_train, y_train)
         y_pred, y_instance_pred = model.predict(x_val)
