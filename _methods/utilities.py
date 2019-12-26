@@ -109,22 +109,17 @@ def total_instance_labels(b_neg_labels, b_pos_labels):
 
 def batch_set(x, y, current_iter = 1, total_iter=5):
     """
-    function - for each iterations i <= k will create new testing and training datasets for cross-validation
-    :param features: list of features [list]
-    :param bag_labels:  list of bag_labels [list]
-    :param i: current iteration [int]
-    :param k:  total number of iterations [int]
-    :return: batched sets for training and testing
     """
-    num_bags = len(x)
-    batch = int((num_bags / (total_iter))//1)
-    x_ds = [x[i:i + batch] for i in range(0, num_bags, batch)]
-    y_ds = [y[i:i + batch] for i in range(0, num_bags, batch)]
-    x_val = x_ds.pop(current_iter)  # validation set
-    y_val = y_ds.pop(current_iter)  # validation set
-    x_train = [item for sublist in x_ds for item in sublist]
-    y_train = [item for sublist in y_ds for item in sublist]
+    x_val, x_train = split(x, current_iter, total_iter)
+    y_val, y_train = split(y, current_iter, total_iter)
     return x_train, x_val, y_train, y_val
+
+def split(lst,cur_iter,total_iter):
+    splitted_lst = np.array_split(lst, total_iter)
+    validation_lst = splitted_lst.pop(cur_iter-1)
+    flat_lst = [item for sublist in splitted_lst for item in sublist]
+    return validation_lst, flat_lst
+
 
 def into_dictionary(index, features):
     """
@@ -282,7 +277,7 @@ def visualize_ro(args, ro_results):
     plt.savefig(os.getcwd() + '/{}_{}_ro.png'.format(args.dataset, args.kernel))
 
 def visualize_kappa(args, kappa_results):
-    x = [3, 5, 7, 10]
+    x = [2,3, 4, 5, 7, 10, 15, 20]
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
     plt.grid()
@@ -326,9 +321,9 @@ def standard_deviaton(lst, mean):
     return sqrt(std)
 
 def multiply_features(list_of_instance):
-    num, length = list_of_instance.shape
+    length = len(list_of_instance[0])
     all_combinations = list(combinations([a for a in range(length)],2))
     for el1, el2 in all_combinations:
-        #print('({},{}) combination'.format(el1, el2))
+        print('({},{}) combination'.format(el1, el2))
         list_of_instance = np.c_[list_of_instance, list_of_instance[:,el1][:,] * list_of_instance[:,el2][:,]]
     return list_of_instance
