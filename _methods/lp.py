@@ -4,7 +4,9 @@ from scipy.optimize import linprog
 from .utilities import total_instance_labels
 from cvxopt import matrix, solvers
 from warnings import filterwarnings
+import sys
 
+np.set_printoptions(threshold=sys.maxsize)
 
 class Lp:
     def bags_to_matrix(self):
@@ -21,6 +23,8 @@ class Lp:
         g = np.zeros((n, n + d + 2 * self.k + 1))
         counter = 0
         for bag in self.training_bags:
+            print(bag.features)
+            break
             true_bag_labels = self.inference_on_bag(bag.features,
                                                     bag.bag_label)  # finds labels for true label of the bag
             false_bag_labels = self.inference_on_bag(bag.features, -bag.bag_label)  # labels for false label
@@ -43,10 +47,54 @@ class Lp:
                         g[counter][d + 1 + k_value] += 1  # positive cardinality weights grad
                     if k_value / self.k < neg_count / len(true_bag_labels) <= (k_value + 1) / self.k:
                         g[counter][d + 1 + self.k + k_value] += -1
-            g[counter][d + 1 + 2 * self.k + counter] = 1  # negative cardinality weights grad
+            g[counter][d + 1 + 2 * self.k + counter] = 1
             counter += 1
             p_matrix = np.r_
         return np.r_[g, np.c_[np.zeros((n, len(self.weights) + 2 * self.k + 1)), np.diag(np.ones(n))]]
+
+
+    def a_matrix(self):
+        counter = 0
+        d,n = len(self.weights), len(self.training_bags)
+        A = np.zeros(shape=(n, 2*d+1+2*self.k+n), dtype=np.float16)
+        for bag in self.training_bags:
+            q = self.q_matrix(bag)
+            zeta = np.zeros(n+d)
+            zeta[counter] = -1
+            q = np.r_[q, zeta]
+            A[counter] = q
+            counter+=1
+        helper_matrix = np.c_[np.zeros(shape=(n,d+1+2*self.k)), -np.eye(n), np.zeros(shape=(n, d))]
+        absolute_constraint_1 = np.c_[self.lamb*np.eye(d), np.zeros(shape=(d, 1+2*self.k+n)), -np.eye(d)]
+        absolute_constraint_2 = np.c_[-self.lamb*np.eye(d), np.zeros(shape=(d, 1+2*self.k+n)), -np.eye(d)]
+        A = np.r_[A, helper_matrix, absolute_constraint_1, absolute_constraint_2]
+        return A
+
+    def q_matrix(self, bag):
+        true_bag_labels = self.inference_on_bag(bag.features,
+                                                bag.bag_label)  # finds labels for true label of the bag
+        false_bag_labels = self.inference_on_bag(bag.features, -bag.bag_label)  # labels for false label
+        total_instance_list = total_instance_labels(false_bag_labels, true_bag_labels)  # false - true labels
+        weight = np.dot(bag.features[:][:].T, total_instance_list)
+        intercept = np.sum(total_instance_list)
+        pos_weights = np.zeros(self.k)
+        neg_weights = np.zeros(self.k)
+        pos_count = sum(true_bag_labels)
+        neg_count = sum(false_bag_labels)
+        length = len(true_bag_labels)
+        if bag.bag_label == 1:
+            for k_value in range(self.k):
+                if k_value / self.k < pos_count / length <= (k_value + 1) / self.k:
+                    pos_weights[k_value] += -1
+                if k_value / self.k <= neg_count / length < (k_value + 1) / self.k:
+                    neg_weights[k_value] += 1
+        if bag.bag_label == -1:
+            for k_value in range(self.k):
+                if k_value / self.k <= pos_count / length < (k_value + 1) / self.k:
+                    pos_weights[k_value] += 1
+                if k_value / self.k < neg_count / length <= (k_value + 1) / self.k:
+                    neg_weights[k_value] += -1
+        return np.r_[weight, intercept, pos_weights, neg_weights]
 
     def lp_train(self):
         """
@@ -61,25 +109,19 @@ class Lp:
         last_loss  = float('inf')
         for epoch in range(self.max_iterations):
             #print(self.weights)
+            d, n = len(self.weights), len(self.training_bags)  # basic dimensions
+            c = np.r_[np.zeros(d+2 * self.k + 1, dtype=np.float16), np.ones(n+d, dtype=np.float16)]
+            A = self.a_matrix() # creates G matrix
+            b = np.r_[-np.ones(n), np.zeros(n+2*d)]  # creates h matrix
+            sol = linprog(c, A, b, method=self.lpm, bounds=(-1000,1000))  # finds solution to linear programming problem
+            self.get_weights(sol['x'])  # applies solution for new weights
             loss = self.loss_function()
+            print('{}, {}'.format(self.pos_c_weights, self.neg_c_weights))
+
             self.logger.error('{}-th iteration, loss = {}'.format(epoch, loss))
             self.loss_history.append(loss)
-            d, n = len(self.weights), len(self.training_bags)  # basic dimensions
-            p = np.r_[self.lamb*np.ones(d, dtype=float), np.zeros(2 * self.k + 1, dtype=float), np.ones(n, dtype=float)]  # creates P matrix
-            g = self.bags_to_matrix()  # creates G matrix
-            h = np.r_[-np.ones(n), np.zeros(n)]  # creates h matrix
-            sol = linprog(p, g, h, method=self.lpm)  # finds solution to linear programming problem
-            #print(loss)
-            #print(g)
-            if epochs >= self.max_iterations or self.lr <= max_lr/100:
-                break
-            if last_loss <= loss:
-                self.lr /= 10
-                epochs +=1
-            else:
-                self.get_weights(sol['x'])  # applies solution for new weights
-                last_loss = loss
-                epochs += 1
+
+    #def lp(self):
 
 
     def get_weights(self, sol):
@@ -89,10 +131,10 @@ class Lp:
         """
 
         d, n = len(self.weights), len(self.training_bags)
-        self.weights -= self.lr * sol[:d]
-        self.intercept -= self.lr * sol[d]
-        self.pos_c_weights -= self.cardinality_lr * sol[d+1:d+1+self.k]
-        self.neg_c_weights -= self.cardinality_lr * sol[d + 1 + self.k:d + 1 + 2 * self.k]
+        self.weights = sol[:d]
+        self.intercept = sol[d]
+        self.pos_c_weights = sol[d+1:d+1+self.k]
+        self.neg_c_weights = sol[d + 1 + self.k:d + 1 + 2 * self.k]
         #self.logger.error('New weights: {}\n'.format(self.weights))
         #self.logger.error('New intercept: {}\n'.format(self.intercept))
         #self.logger.error('New pos c weights: {}\n'.format(self.pos_c_weights))

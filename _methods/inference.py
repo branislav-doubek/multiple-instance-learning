@@ -17,13 +17,14 @@ class Inference:
                     for k_value in range(self.k):
                         if k_value / self.k < (positive_instances / total_instances) <= (k_value + 1) / self.k:
                             return self.pos_c_weights[k_value]
-            else:
+            else: # negative bag
                 if total_instances - positive_instances == 0:
                     return -float('inf')
                 else:
                     for k_value in range(self.k):
                         if k_value / self.k <= (positive_instances / total_instances) < (k_value + 1) / self.k:
                             return self.neg_c_weights[k_value]
+
         if 'rmimn' in self.cardinality:  # RMINM
             if bag_label == 1:
                 if positive_instances / total_instances >= self.ro:
@@ -66,10 +67,11 @@ class Inference:
         if self.logger:
             self.logger.debug('Inference on bag with label {} containing {} instances'.format(bag_label, total_features))
             #self.logger.debug('Instances={}'.format(features))
-        potential = np.zeros(total_features, dtype=float)  # creates an array
-        for i in range(total_features):
-            potential[i] = self.instance_potential(features[i])
+        #potential = np.zeros(total_features, dtype=float)  # creates an array
+        #for i in range(total_features):
+        #    potential[i] = self.instance_potential(features[i])
         # finds the maximum sum and returns indexes for positive instances
+        potential = np.array([self.instance_potential(features[i]) for i in range(total_features)])
         positive_indexes = self.find_max_sum(potential, bag_label)
         labels = np.zeros(total_features)
         for index in positive_indexes:  # positive instances=1, negative = 0

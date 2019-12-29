@@ -12,11 +12,10 @@ class BatchGradientDescent:
         last_loss = float('inf')
         while True:
             loss, grad = self.batch_hinge_loss()
-            #Uncomment for loss visualization
             if epochs % 1 == 0:
                 print('Epoch={}: Loss = {}'.format(epochs,loss))
             self.loss_history.append(loss)
-            if epochs >= self.max_iterations or self.lr <= 1e-8 or loss < 0.01:
+            if epochs >= self.max_iterations or self.lr <= 1e-8 or loss < 1:
                 break
             if last_loss <= loss:
                 self.lr /= 10
@@ -56,11 +55,17 @@ class BatchGradientDescent:
                 neg_ratio = sum(neg_bag_labels) / num_instances
                 if 'gmimn' in self.cardinality: # only for gmimn
                     if bag.bag_label == 1:
-                        grad2[int(pos_ratio // (1 / self.k) - 1)] += -1
-                        grad2[self.k + int(neg_ratio // (1 / self.k) - 1)] += 1
-                    else:
-                        grad2[int(pos_ratio // (1 / self.k) - 1)] += 1
-                        grad2[self.k + int(neg_ratio // (1 / self.k) - 1)] += -1
+                        for k_value in range(self.k):
+                            if k_value / self.k < pos_ratio / num_instances <= (k_value + 1) / self.k:
+                                grad2[k_value] += -1
+                            if k_value / self.k <= neg_ratio /num_instances < (k_value + 1) / self.k:
+                                grad2[k_value] += 1
+                    if bag.bag_label == -1:
+                        for k_value in range(self.k):
+                            if k_value / self.k <= pos_ratio /num_instances < (k_value + 1) / self.k:
+                                grad2[k_value] += 1
+                            if k_value / self.k < neg_ratio /num_instances <= (k_value + 1) / self.k:
+                                grad2[k_value] += -1
                 else: # mimn and rmimn
                     if bag.bag_label == 1:
                         grad2[0] += -1
