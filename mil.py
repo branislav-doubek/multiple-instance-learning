@@ -38,7 +38,7 @@ class MIL(Inference, BGD, Mi_SVM, Lp, Qp):
         self.visualize = args.v # Visualize instance labels
         self.norm = args.norm
         self.lpm = args.lpm # linear programming method
-        self.momentun_beta = 0.9
+        self.momentun_beta = args.mom
         self.bgdm = args.bgdm
 
     def append_training_bags(self, features, bag_labels):
@@ -51,15 +51,14 @@ class MIL(Inference, BGD, Mi_SVM, Lp, Qp):
         self.training_bags = [] # list for training set
         feature_dimension = len(features[0][0]) # infers dimension of data
         self.logger.debug('Appending training bags')
-        print(feature_dimension)
         if "lp" in self.kernel or "qp" in self.kernel:
             self.weights = np.zeros(feature_dimension)
         else:
             self.weights = self.rs.rand(feature_dimension) # bgd and svm kernel
             self.momentum = np.zeros(feature_dimension+1+2*self.k)
-        for instance, bag_label in zip(features, bag_labels):
-            bag = Bag(instance, bag_label)
-            self.training_bags.append(bag)
+        self.training_bags = [Bag(x,y) for x,y in zip(features, bag_labels)]
+
+
 
     def append_testing_bags(self, features):
         """
@@ -67,11 +66,7 @@ class MIL(Inference, BGD, Mi_SVM, Lp, Qp):
         :param features: list of bag features containing list of data points
         :return: None
         """
-        #print(self.weights)
-        self.testing_bags = []  # list for testing set
-        for instance in features:
-            bag = Bag(instance)
-            self.testing_bags.append(bag)
+        self.testing_bags = [Bag(x) for x in features]  # list for testing set
 
     def scoring_function(self, features, labels, bag_label):
         """
