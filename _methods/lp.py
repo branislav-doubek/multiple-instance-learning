@@ -106,35 +106,48 @@ class Lp:
         filterwarnings('ignore')
         max_lr = self.lr
         epochs = 0
-        last_loss  = float('inf')
         for epoch in range(self.max_iterations):
-            #print(self.weights)
+            loss = self.loss_function()
+            self.logger.error('{}-th iteration, loss = {}'.format(epoch, loss))
+            self.loss_history.append(loss)
             d, n = len(self.weights), len(self.training_bags)  # basic dimensions
             c = np.r_[np.zeros(d+2 * self.k + 1, dtype=np.float16), np.ones(n+d, dtype=np.float16)]
             A = self.a_matrix() # creates G matrix
             b = np.r_[-np.ones(n), np.zeros(n+2*d)]  # creates h matrix
-            sol = linprog(c, A, b, method=self.lpm, bounds=(-1000,1000))  # finds solution to linear programming problem
-            self.get_weights(sol['x'])  # applies solution for new weights
-            loss = self.loss_function()
-            print('{}, {}'.format(self.pos_c_weights, self.neg_c_weights))
-
-            self.logger.error('{}-th iteration, loss = {}'.format(epoch, loss))
-            self.loss_history.append(loss)
-
+            sol = linprog(c, A, b, method=self.lpm, bounds=(-10,10))  # finds solution to linear programming problem
+            if loss <= min(self.loss_history):
+                self.save_parameters()
+            self.get_solution(sol['x'])  # applies solution for new weights
+        self.load_parameters()
     #def lp(self):
 
 
-    def get_weights(self, sol):
+    def get_solution(self, sol):
         """
         :param sol:
         :return:
         """
-
         d, n = len(self.weights), len(self.training_bags)
         self.weights = sol[:d]
         self.intercept = sol[d]
         self.pos_c_weights = sol[d+1:d+1+self.k]
         self.neg_c_weights = sol[d + 1 + self.k:d + 1 + 2 * self.k]
+        '''
+        for alpha in alphas:
+            self.weights = alpha*sol[:d]
+            self.intercept = alpha*sol[d]
+            self.pos_c_weights = alpha*sol[d+1:d+1+self.k]
+            self.neg_c_weights = alpha*sol[d + 1 + self.k:d + 1 + 2 * self.k]
+            loss = self.loss_function()
+            print(loss)
+            if self.loss_history[-1] <= loss:
+                print(alpha)
+                print('Does not minimize, other alpha')
+                self.load_parameters()
+            else:
+                self.loss_history.append(loss)
+                break
+        '''
         #self.logger.error('New weights: {}\n'.format(self.weights))
         #self.logger.error('New intercept: {}\n'.format(self.intercept))
         #self.logger.error('New pos c weights: {}\n'.format(self.pos_c_weights))

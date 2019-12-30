@@ -265,19 +265,19 @@ def model_path(args, split='train'):
                                                 args.rs)
 
 def visualize_ro(args, ro_results):
-    x = np.linspace(0.1,0.9, num=9)
+    x = np.linspace(0.1,1.0, num=10)
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
     plt.grid()
     plt.ylim(0,1)
     plt.xlabel('ρ')
-    plt.xlim(0.1,0.9)
+    plt.xlim(0.1,1.0)
     plt.ylabel('accuracy')
     plt.plot(x,ro_results, '-ro')
     plt.savefig(os.getcwd() + '/{}_{}_ro.png'.format(args.dataset, args.kernel))
 
 def visualize_kappa(args, kappa_results):
-    x = [2,3, 4, 5, 7, 10, 15, 20]
+    x = [3, 5, 7, 10]
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
     plt.grid()
@@ -324,6 +324,5 @@ def multiply_features(list_of_instance):
     length = len(list_of_instance[0])
     all_combinations = list(combinations([a for a in range(length)],2))
     for el1, el2 in all_combinations:
-        print('({},{}) combination'.format(el1, el2))
         list_of_instance = np.c_[list_of_instance, list_of_instance[:,el1][:,] * list_of_instance[:,el2][:,]]
     return list_of_instance
