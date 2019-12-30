@@ -9,7 +9,10 @@ def get_dataset(args):
     Loads and batches fox dataset into feature and bag label lists
     :return: list(features), list(bag_labels)
     """
-    filepath = os.getcwd() + '/data/{}_dataset.pkl'.format(args.dataset)
+    if args.multiply:
+        filepath = os.getcwd() + '/data/{}_dataset.pkl'.format(args.dataset)
+    else:
+        filepath = os.getcwd() + '/data/{}_original_dataset.pkl'.format(args.dataset)
     if (os.path.exists(filepath)):
         print('Dataset loaded')
         with open(filepath, 'rb') as dataset_file:
@@ -21,7 +24,6 @@ def get_dataset(args):
         file = open(filepath, 'wb')
         pickle.dump(dataset, file)
         return dataset
-
 
 class Dataset():
     def __init__(self, args):
@@ -35,7 +37,9 @@ class Dataset():
         dataset = scipy.io.loadmat(os.getcwd() + '/data/fox_100x100_matlab.mat')  # loads fox dataset
         instance_bag_ids = np.array(dataset['bag_ids'])[0]
         instance_features = np.array(dataset['features'].todense())
-        instance_features = multiply_features(instance_features)
+        if args.multiply:
+            instance_features = multiply_features(instance_features)
+
         instance_labels = np.array(dataset['labels'].todense())[0]
         bag_features = into_dictionary(instance_bag_ids,
                                        instance_features)  # creates dictionary whereas key is bag and values are

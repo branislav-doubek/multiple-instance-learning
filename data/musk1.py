@@ -9,7 +9,10 @@ def get_dataset(args):
     Loads and batches musk1 dataset into feature and bag label lists
     :return: list(features), list(bag_labels)
     """
-    filepath = os.getcwd() + '/data/{}_dataset.pkl'.format(args.dataset)
+    if args.multiply:
+        filepath = os.getcwd() + '/data/{}_dataset.pkl'.format(args.dataset)
+    else:
+        filepath = os.getcwd() + '/data/{}_original_dataset.pkl'.format(args.dataset)
     if (os.path.exists(filepath)):
         print('Dataset loaded')
         with open(filepath, 'rb') as dataset_file:
@@ -34,7 +37,8 @@ class Dataset():
         dataset = scipy.io.loadmat(os.getcwd() + '/data/musk1norm_matlab.mat')  # loads elephant dataset
         instance_bag_ids = np.array(dataset['bag_ids'])[0]
         instance_features = np.array(dataset['features'].todense())  # 1 feature point contains 230 dim vector
-        instance_features = multiply_features(instance_features)
+        if args.multiply:
+            instance_features = multiply_features(instance_features)
         instance_labels = np.array(dataset['labels'].todense())[0]  # 100 positive and 100 bag negative labels
         bag_features = into_dictionary(instance_bag_ids,
                                        instance_features)
