@@ -40,6 +40,17 @@ class MIL(Inference, BGD, Mi_SVM, Lp, Qp):
         self.lpm = args.lpm # linear programming method
         self.momentun_beta = args.mom
         self.bgdm = args.bgdm
+        self.last_params = {}
+
+    def save_parameters(self):
+        self.last_param ={'weights': self.weights, 'intercept': self.intercept,
+                          'pos_c': self.pos_c_weights, 'neg_c': self.neg_c_weights}
+
+    def load_parameters(self):
+        self.weights = self.last_param['weights']
+        self.intercept = self.last_param['intercept']
+        self.pos_c_weights = self.last_param['pos_c']
+        self.neg_c_weights = self.last_param['neg_c']
 
     def append_training_bags(self, features, bag_labels):
         """
@@ -53,12 +64,11 @@ class MIL(Inference, BGD, Mi_SVM, Lp, Qp):
         self.logger.debug('Appending training bags')
         if "lp" in self.kernel or "qp" in self.kernel:
             self.weights = np.zeros(feature_dimension)
+            self.weights = self.rs.rand(feature_dimension) # bgd and svm kernel
         else:
             self.weights = self.rs.rand(feature_dimension) # bgd and svm kernel
             self.momentum = np.zeros(feature_dimension+1+2*self.k)
         self.training_bags = [Bag(x,y) for x,y in zip(features, bag_labels)]
-
-
 
     def append_testing_bags(self, features):
         """

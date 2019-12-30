@@ -12,14 +12,15 @@ from collections.abc import Iterable
 
 def train(args, dataset):
     x_train, y_train = dataset.return_training_set()
-    model = MIL(args)
-    model.fit(x_train, y_train)
-    y_pred, y_instance_pred = model.predict(x_train)
     filepath = os.getcwd() + model_path(args)
+    model = MIL(args)
+    with open(filepath, 'wb') as model_file:
+        model.fit(x_train, y_train)
+        pickle.dump(model, model_file)
+    y_pred, y_instance_pred = model.predict(x_train)
     if args.v:
         loss = model.return_loss_history()
         visualize_loss(args, loss)
-    pickle.dump(model, filepath)
 
 def test(args, dataset):
     x_test, y_test = dataset.return_testing_set()
@@ -39,16 +40,15 @@ def test(args, dataset):
 def run(args, dataset):
     accuracies = []
     for run in range(5):
+        dataset.random_shuffle()
         x_train, y_train = dataset.return_training_set()
         x_test, y_test = dataset.return_testing_set()
         model = MIL(args)
-        model.set
         model.fit(x_train, y_train)
         y_pred, y_instance_pred = model.predict(x_test)
         rec, prec, acc, f1 = calculate_metrics(y_pred, y_test, args.cm)
         accuracies.append(acc)
         print('Acc={}'.format(acc))
-        args.rs = args.rs+1
     mean = average(accuracies)
     std_dev = standard_deviaton(accuracies, mean)
     print('Result of evaluation: mean = {}, std={}'.format(mean, std_dev))
@@ -89,8 +89,8 @@ def cross_validate(args, dataset):
     features, bag_labels  = dataset.return_training_set()
     cross_validate = {'c': [0.01, 0.1, 1, 10, 1000],
                       'lr': [1e-5, 1e-4, 1e-3],
-                     'ro': [(a+1)/10 for a in range(9)],
-                      'k': [2,3, 4, 5, 7, 10, 15, 20]}
+                     'ro': [(a+1)/10 for a in range(10)],
+                      'k': [3, 5, 7, 10]}
     best_c = 0
     best_lr = 0
     best_ro = 0
@@ -224,6 +224,7 @@ def main():
     parser.add_argument('-bgdm', nargs='?', default=1, choices=[1,2], help='Select batch gradient method, 1-momentum, 2- classical bgd')
     parser.add_argument('-mom', nargs='?', default=0.5, type=float, help='Momentum decay')
     parser.add_argument('-valid_iter', nargs='?', default=1, type=int, help='Select part of training dataset to validate model on')
+    parser.add_argument('-multiply', nargs='?', default=False, type=bool, help='Multiply columns of instances to increase dimension' )
     run_parser(parser.parse_args())
 
 
