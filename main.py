@@ -90,7 +90,7 @@ def cross_validate(args, dataset):
     cross_validate = {'c': [0.01, 0.1, 1, 10, 1000],
                       'lr': [1e-5, 1e-4, 1e-3],
                      'ro': [(a+1)/10 for a in range(10)],
-                      'k': [3, 5, 7, 10]}
+                      'k': [3, 5, 10]}
     best_c = 0
     best_lr = 0
     best_ro = 0
