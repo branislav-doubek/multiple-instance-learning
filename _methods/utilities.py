@@ -277,7 +277,7 @@ def visualize_ro(args, ro_results):
     plt.savefig(os.getcwd() + '/{}_{}_ro.png'.format(args.dataset, args.kernel))
 
 def visualize_kappa(args, kappa_results):
-    x = [3, 5, 7, 10]
+    x = [3, 5, 10]
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
     plt.grid()
