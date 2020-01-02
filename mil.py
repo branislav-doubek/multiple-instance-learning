@@ -123,9 +123,9 @@ class MIL(Inference, BGD, Mi_SVM, Lp, Qp):
         :return: accuracy of model
         """
         #Instance based weights for noise dataset
-        #self.weights = np.array([3.52007138, 3.57159067])
-        #self.intercept = -3.5305451486024304
 
+        #self.weights = np.array([1.40448947, 1.3870068])
+        #self.intercept= -1.4807909037067717
         #Instance based weights for image dataset
         #self.weights = np.array([-2.44514843e-05,  7.84113313e-03, -5.66825165e-05])
         #self.intercept = -0.99965145
