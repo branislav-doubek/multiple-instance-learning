@@ -37,21 +37,16 @@ def test(args, dataset):
         logger.exception(e)
         logger.error('No module named: {}'.format(filepath))
 
+
 def run(args, dataset):
-    accuracies = []
-    for run in range(5):
-        dataset.random_shuffle()
-        x_train, y_train = dataset.return_training_set()
-        x_test, y_test = dataset.return_testing_set()
-        model = MIL(args)
-        model.fit(x_train, y_train)
-        y_pred, y_instance_pred = model.predict(x_test)
-        rec, prec, acc, f1 = calculate_metrics(y_pred, y_test, args.cm)
-        accuracies.append(acc)
-        print('Acc={}'.format(acc))
-    mean = average(accuracies)
-    std_dev = standard_deviaton(accuracies, mean)
-    print('Result of evaluation: mean = {}, std={}'.format(mean, std_dev))
+    x_train, y_train = dataset.return_training_set()
+    x_test, y_test = dataset.return_testing_set()
+    model = MIL(args)
+    model.fit(x_train, y_train)
+    y_pred, y_instance_pred = model.predict(x_test)
+    rec, prec, acc, f1 = calculate_metrics(y_pred, y_test, args.cm)
+    print('Acc={}'.format(acc))
+
 
 def k_validation(args, features, bag_labels, k_valid=5):
     """
