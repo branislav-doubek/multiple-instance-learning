@@ -276,16 +276,16 @@ def visualize_ro(args, ro_results):
     plt.plot(x,ro_results, '-ro')
     plt.savefig(os.getcwd() + '/{}_{}_ro.png'.format(args.dataset, args.kernel))
 
-def visualize_kappa(args, kappa_results):
-    x = [3, 5, 10]
-    fig = plt.figure()
-    ax1 = fig.add_subplot(111)
-    plt.grid()
-    plt.ylim(0,1)
+def visualize_kappa(args, performance):
+    y_pos = np.arange(3)
+    objects = ['3', '5', '10']
+    plt.bar(y_pos, performance, align='center', color='r')
+    plt.xticks(y_pos,objects)
+    plt.yticks(0.1*np.arange(11))
+    plt.ylim((0,1.0))
     plt.xlabel('κ')
-    plt.xlim(3,10)
-    plt.ylabel('accuracy')
-    plt.plot(x,kappa_results, '-ro')
+    plt.ylabel('Accuracy')
+    plt.grid()
     plt.savefig(os.getcwd() + '/{}_{}_kappa.png'.format(args.dataset, args.kernel))
 
 def visualize_loss(args, loss):
