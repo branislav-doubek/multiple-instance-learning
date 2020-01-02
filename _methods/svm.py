@@ -15,6 +15,7 @@ class Mi_SVM:
         while labels_changed and epochs <= self.max_iterations:
             #loss = self.loss_function()
             #self.loss_history.append(loss)
+            print(epochs)
             labels = []
             features = []
             for bag in self.training_bags:
