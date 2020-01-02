@@ -10,12 +10,12 @@ class BatchGradientDescent:
         """
         epochs = 0
         last_loss = float('inf')
-        while True:
+        while True and epochs < self.max_iterations:
             loss, grad = self.batch_hinge_loss()
             if epochs % 1 == 0:
                 print('Epoch={}: Loss = {}'.format(epochs,loss))
             self.loss_history.append(loss)
-            if epochs >= self.max_iterations or self.lr <= 1e-8 or loss < 1:
+            if epochs >= self.max_iterations or self.lr <= 1e-10 or loss < 1:
                 break
             if last_loss <= loss:
                 self.lr /= 10
@@ -34,7 +34,7 @@ class BatchGradientDescent:
         :return: total loss and gradient
         """
         d=len(self.weights)
-        grad = np.zeros(d, dtype=float)  # gradients of normal weights + intercept point
+        grad = np.zeros(d, dtype=float)  # gradients of normal weights
         intercept = 0
         total_loss = 0
         grad2 = np.zeros(2 * self.k, dtype=float) # gradients of cardinality weights
@@ -117,7 +117,7 @@ class BatchGradientDescent:
         Calculates the zeta function for bag and returns hinge loss like output
         :param features: array of instances in bag
         :param b_label: label of bag
-        :param true_labels: labels of true labeled bag
+        :param true_labels: labels of correctly labeled bag
         :param false_labels: labels of falsely labeled bag
         :return: maximum value out of hinge-like function
         """

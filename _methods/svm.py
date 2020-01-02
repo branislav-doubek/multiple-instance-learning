@@ -13,12 +13,8 @@ class Mi_SVM:
         labels_changed = True
         last_labels = []
         while labels_changed and epochs <= self.max_iterations:
-            print(epochs)
             #loss = self.loss_function()
-            #if epochs % 2 == 0:
-            #    self.logger.error('Epoch={}: Loss = {}'.format(epochs,loss))
             #self.loss_history.append(loss)
-
             labels = []
             features = []
             for bag in self.training_bags:
@@ -26,7 +22,6 @@ class Mi_SVM:
                 features.extend(bag.features)
                 labels.extend(guessed_labels)
             if labels == last_labels:
-                self.logger.debug('Labels stopped changing')
                 labels_changed = False
             clf.fit(features, labels)
             self.weights = clf.coef_[0]

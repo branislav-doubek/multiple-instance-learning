@@ -5,6 +5,7 @@ from .utilities import total_instance_labels
 from cvxopt import matrix, solvers
 from warnings import filterwarnings
 import sys
+from lpsolvers import solve_lp
 
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -114,25 +115,29 @@ class Lp:
             c = np.r_[np.zeros(d+2 * self.k + 1, dtype=np.float16), np.ones(n+d, dtype=np.float16)]
             A = self.a_matrix() # creates G matrix
             b = np.r_[-np.ones(n), np.zeros(n+2*d)]  # creates h matrix
-            sol = linprog(c, A, b, method=self.lpm, bounds=(-10,10))  # finds solution to linear programming problem
+            A = A.astype('float64')
+            c = c.astype('float64')
+            b = b.astype('float64')
+            sol = solve_lp(c,A,b)
             if loss <= min(self.loss_history):
                 self.save_parameters()
-            self.get_solution(sol['x'])  # applies solution for new weights
+            self.get_solution(sol)  # applies solution for new weights
         self.load_parameters()
-    #def lp(self):
-
 
     def get_solution(self, sol):
         """
-        :param sol:
-        :return:
+        :param sol: Solution found by lp solver
+        :return: None
         """
         d, n = len(self.weights), len(self.training_bags)
+
         self.weights = sol[:d]
         self.intercept = sol[d]
         self.pos_c_weights = sol[d+1:d+1+self.k]
         self.neg_c_weights = sol[d + 1 + self.k:d + 1 + 2 * self.k]
+
         '''
+        alphas = [1, 0.1, 0.01, 0.001]
         for alpha in alphas:
             self.weights = alpha*sol[:d]
             self.intercept = alpha*sol[d]
@@ -147,6 +152,7 @@ class Lp:
             else:
                 self.loss_history.append(loss)
                 break
+
         '''
         #self.logger.error('New weights: {}\n'.format(self.weights))
         #self.logger.error('New intercept: {}\n'.format(self.intercept))
