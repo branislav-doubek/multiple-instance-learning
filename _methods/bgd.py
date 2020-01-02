@@ -131,10 +131,6 @@ class BatchGradientDescent:
             sumant = delta_label * (np.matmul(feature, self.weights) + self.intercept)
             self.logger.info('Multiplication: {}({} x {} + {}) = {}\n'.format(delta_label, self.weights, feature, self.intercept, sumant))
             score += sumant
-        if b_label == 1:
-            score += self.cardinality_potential(neg_count, length, -b_label) - \
+        score += self.cardinality_potential(neg_count, length, -b_label) - \
                      self.cardinality_potential(pos_count, length, b_label)
-        else:
-            score += self.cardinality_potential(pos_count, length, b_label) - \
-                     self.cardinality_potential(neg_count, length, -b_label)
         return max(0, 1 + score)
