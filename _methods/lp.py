@@ -5,7 +5,7 @@ from .utilities import total_instance_labels
 from cvxopt import matrix, solvers
 from warnings import filterwarnings
 import sys
-from lpsolvers import solve_lp
+#from lpsolvers import solve_lp
 
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -118,7 +118,7 @@ class Lp:
             A = A.astype('float64')
             c = c.astype('float64')
             b = b.astype('float64')
-            sol = solve_lp(c,A,b)
+            #sol = solve_lp(c,A,b)
             if loss <= min(self.loss_history):
                 self.save_parameters()
             self.get_solution(sol)  # applies solution for new weights
