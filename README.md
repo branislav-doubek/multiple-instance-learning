@@ -15,7 +15,7 @@ to install libraries run:
 ```
 pip3 install -r requirements.txt 
 ```
-The only problem might install library lp solvers, which requires pycddlib library.
+The only problem might be installing library lp solvers(https://pypi.org/project/lpsolvers/), which requires pycddlib library (https://pypi.org/project/pycddlib/).
 ## Runinng sript
 For starting the application run: 
 ```
