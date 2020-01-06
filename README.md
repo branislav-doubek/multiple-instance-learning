@@ -15,6 +15,7 @@ to install libraries run:
 ```
 pip3 install -r requirements.txt 
 ```
+The only problem might install library lp solvers, which requires pycddlib library.
 ## Runinng sript
 For starting the application run: 
 ```
@@ -27,6 +28,7 @@ train - trains classifier on train dataset and saves it into _models file
 test - tests trained classifier on test dataset
 run - trains classifier and evaluates its accuracy testing dataset
 cv - uses k-fold cross validation on training dataset to estimate hyperparemeters of our classifier and evaluates accuracy on testing dataset
+validate - runs 1 run of k-fold cross validation on training dataset
 ```
 
 kernel:
@@ -44,6 +46,7 @@ musk1
 musk2
 image
 noise
+camelyon
 ```
 cardinality potential:
 ```
@@ -63,13 +66,14 @@ We provide list of parameters for our classifier:
 -cv = cross-validate on hyperparameter (Described in section below)
 -lr = learning rate [float]
 -cm = visualize confusion matrx [bool]
--norm = regularization norm [1, 2] (Only for bgd)
--lpm = linear programming methods ['interior-point', 'revised simplex', 'simplex'] (Only for lp)
+-valid_iter = index of fold used as validation sample in validate split [int]
+-mom = momentum parameter [float]
 ```
 ### Cross validation
 If we run cross-validation mode, k-fold cross validation is called on training dataset and we measure accuracy of our classifier for different hyperparameter values. We provide list of tunable hyperparameters:
 ```
 -lr
+-mom
 -c
 -ro
 -k
@@ -80,9 +84,9 @@ If we want to cross validate rho parameter using batch gradient descent with rmi
 ```
 python3 main.py cv bgd fox rmimn -cv='ro'
 ```
-For visualization of loss function of mi-SVM algorithm with gmimn potential and kappa set to 10 run on musk1 dataset:
+For visualization of loss function of batch gradient descent optimization algorithm with gmimn potential and kappa set to 10 run on musk1 dataset:
 ```
-python3 main.py train svm musk1 gmimn -v=True -k=10
+python3 main.py train bgd musk1 gmimn -v=True -k=10
 ```
 
 
