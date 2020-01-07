@@ -5,7 +5,7 @@ from .utilities import total_instance_labels
 from cvxopt import matrix, solvers
 from warnings import filterwarnings
 import sys
-#from lpsolvers import solve_lp
+from lpsolvers import solve_lp
 
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -107,10 +107,11 @@ class Lp:
         filterwarnings('ignore')
         max_lr = self.lr
         epochs = 0
+        self.save_parameters()
         for epoch in range(self.max_iterations):
             loss = self.loss_function()
-            self.logger.error('{}-th iteration, loss = {}'.format(epoch, loss))
             self.loss_history.append(loss)
+            print(loss)
             d, n = len(self.weights), len(self.training_bags)  # basic dimensions
             c = np.r_[np.zeros(d+2 * self.k + 1, dtype=np.float16), np.ones(n+d, dtype=np.float16)]
             A = self.a_matrix() # creates G matrix
@@ -118,10 +119,16 @@ class Lp:
             A = A.astype('float64')
             c = c.astype('float64')
             b = b.astype('float64')
-            #sol = solve_lp(c,A,b)
-            if loss <= min(self.loss_history):
-                self.save_parameters()
-            self.get_solution(sol)  # applies solution for new weights
+            try:
+                sol = solve_lp(c,A,b)
+                if loss <= min(self.loss_history):
+                    self.save_parameters()
+                self.get_solution(sol)  # applies solution for new weights
+            except ValueError:
+                print('Infeasable solution')
+                break
+            if loss < 1:
+                break
         self.load_parameters()
 
     def get_solution(self, sol):
@@ -154,7 +161,3 @@ class Lp:
                 break
 
         '''
-        #self.logger.error('New weights: {}\n'.format(self.weights))
-        #self.logger.error('New intercept: {}\n'.format(self.intercept))
-        #self.logger.error('New pos c weights: {}\n'.format(self.pos_c_weights))
-        #self.logger.error('New neg c weights: {}\n'.format(self.neg_c_weights))
