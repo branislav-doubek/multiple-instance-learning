@@ -7,7 +7,7 @@ Download files using:
 ```
 git clone https://github.com/Frovis/MultipleInstanceLearning.git
 ```
-Download datasets for multiple instance learning at:
+Download datasets for multiple instance learning:
 * matlab files: [Fox, Elephant, Tiger, Musk1, Musk2](http://www.cs.columbia.edu/~andrews/mil/datasets.html)
 and extract them into data folder of our project.
 ## Libraries
@@ -46,7 +46,6 @@ musk1
 musk2
 image
 noise
-camelyon
 ```
 cardinality potential:
 ```
