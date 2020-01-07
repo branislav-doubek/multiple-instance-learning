@@ -59,38 +59,29 @@ class Dataset():
             with open(instance, 'rb') as tfh:
                 tsd = pickle.load(tfh)
                 if np.array(len(tsd['instances'][0])) == 32:
-                    self.pos_bags.append(np.array(tsd['instances']))
+                    self.training_data.append(np.array(tsd['instances']))
+                    self.training_labels.append(1)
 
         for instance in list_of_negative_training_bags:  # negative instances
             with open(instance, 'rb') as tfh:
                 tsd = pickle.load(tfh)
                 if np.array(len(tsd['instances'][0])) == 32:
-                    self.neg_bags.append(np.array(tsd['instances']))
+                    self.training_data.append(np.array(tsd['instances']))
+                    self.training_labels.append(-1)
 
         for instance in list_of_positive_testing_bags:  # positive instances
             with open(instance, 'rb') as tfh:
                 tsd = pickle.load(tfh)
                 if np.array(len(tsd['instances'][0])) == 32:
-                    self.pos_bags.append(np.array(tsd['instances']))
+                    self.testing_data.append(np.array(tsd['instances']))
+                    self.testing_labels.append(1)
 
         for instance in list_of_negative_testing_bags:  # negative instances
             with open(instance, 'rb') as tfh:
                 tsd = pickle.load(tfh)
                 if np.array(len(tsd['instances'][0])) == 32:
-                    self.neg_bags.append(np.array(tsd['instances']))
-        self.random_shuffle()
-
-    def random_shuffle(self):
-        random.seed(self.rs)
-        random.shuffle(self.pos_bags)
-        random.shuffle(self.neg_bags)
-        self.training_data = self.pos_bags[:int(len(self.pos_bags)/2)] + self.neg_bags[:int(len(self.neg_bags)/2)]
-        self.training_labels = [1 for _ in range(int(len(self.pos_bags)/2))] + [-1 for _ in range(int(len(self.neg_bags)/2))]
-        self.testing_data = self.pos_bags[int(len(self.pos_bags)/2):] + self.neg_bags[int(len(self.neg_bags)/2):]
-        self.testing_labels = [1 for _ in range(int(len(self.pos_bags)/2))] + [-1 for _ in range(int(len(self.neg_bags)/2))]
-        self.testing_data, self.testing_labels = shuffle_dataset(self.testing_data, self.testing_labels, self.rs)
-        self.training_data, self.training_labels = shuffle_dataset(self.training_data, self.training_labels, self.rs)
-
+                    self.testing_data.append(np.array(tsd['instances']))
+                    self.testing_labels.append(-1)
 
     def return_testing_set(self):
         return self.testing_data, self.testing_labels
