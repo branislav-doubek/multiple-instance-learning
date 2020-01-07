@@ -90,7 +90,8 @@ def cross_validate(args, dataset):
     cross_validate = {'c': [0.01, 0.1, 1, 10, 1000],
                       'lr': [1e-5, 1e-4, 1e-3],
                      'ro': [(a+1)/10 for a in range(10)],
-                      'k': [3, 5, 10]}
+                      'k': [3, 5, 10],
+                      'mom': [0.5, 0.7, 0.9]}
     best_c = 0
     best_lr = 0
     best_ro = 0
@@ -102,7 +103,7 @@ def cross_validate(args, dataset):
     print('Starting cross validation')
     args.cardinality_lr = args.lr
 
-    if (args.cv == 'lr' or 'all' in args.cv) and args.kernel != 'svm':
+    if (args.cv == 'lr' or 'all' in args.cv) and args.kernel == 'bgd':
         print('Testing learning rate')
         best_results = 0
         for param in cross_validate['lr']:
@@ -115,6 +116,19 @@ def cross_validate(args, dataset):
         args.lr = best_param
         print('Selected lr parameter:{}'.format(args.lr))
     args.cardinality_lr = args.lr
+
+    if (args.cv == 'mom' or 'all' in args.cv) and args.kernel == 'bgd':
+        print('Testing momentum rate')
+        best_results = 0
+        for param in cross_validate['mom']:
+            args.mom = param
+            results = k_validation(args, features, bag_labels)
+            print("C-validation acc with momentum parameter ={} is: {}".format(param, results))
+            if best_results <= results:
+                best_results = results
+                best_param = param
+        args.mom = best_param
+        print('Selected momentum parameter:{}'.format(args.lr))
 
     if 'c' is args.cv or 'all' in args.cv:
         best_results = 0
@@ -179,7 +193,7 @@ def run_parser(args):
                 test(args, dataset)
             if 'train' in args.split:
                 train(args, dataset)
-            if 'cv' in args.split:  # run
+            if 'cv' in args.split:
                 best_args = cross_validate(args, dataset)
                 run(best_args, dataset)
             if 'validate' in args.split:
